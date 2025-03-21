@@ -4,6 +4,12 @@ Observability for your Supabase project, using Prometheus/Grafana, collecting [~
 
 ![./docs/supabase-grafana.png](./docs/supabase-grafana.png)
 
+For more information, see our [documentation](https://supabase.com/docs/guides/telemetry/metrics)
+
+⚠️ Note that this repository is an example and is not intended for production use. We strongly recommend that you setup metrics collection into your own observability stack, see the [Metrics](https://supabase.com/docs/guides/telemetry/metrics) page in our documentation for guidance.
+
+If you just need the dashboard to import into your own Grafana instance (self-hosted or in the Cloud), you can find the source [here](./grafana/dashboard.json)
+
 ## Getting started
 
 To run the collector locally using Docker Compose:
@@ -44,16 +50,28 @@ Visit [localhost:8000](http://localhost:8000) and login with the credentials:
 
 Deploy this service to a server which is always running to continuously collect metrics for your Supabase project.
 
-### Using Fly.io
+You will need:
+1. [Prometheus](https://prometheus.io/docs/introduction/overview/) (or compatible datasource)
+2. [Grafana](https://grafana.com/docs/grafana/latest/)
 
-You can run the collector on a free instance of [Fly.io](https://fly.io/)
+Configure your Prometheus instance with a scrape job that looks like this:
+```
+scrape_configs:
+  - job_name: "<YOUR JOB NAME>"
+    metrics_path: "/customer/v1/privileged/metrics"
+    scheme: https
+    basic_auth:
+      username: "service_role"
+      password: "YOUR SERVICE KEY"
+    static_configs:
+      - targets: [
+        "<YOUR SUPABASE PROJECT REF>.supabase.co:443"
+          ]
+        labels:
+          group: "<YOUR LABEL CHOICE>"
+```
 
-Follow these steps:
-
-1. Make sure you have the [Fly CLI](https://fly.io/docs/getting-started/installing-flyctl/) installed, and you are logged in.
-2. Run `fly launch --copy-config` to deploy the app to Fly.
-3. Copy your `.env` file to your Fly project: `fly secrets import < .env`
-4. After a successful deployment, your app will be available at `https://<your-app-name>.fly.dev`
+Within your Grafana, ensure there is a datasource for your Prometheus instance called `prometheus` and head to `Dashboards->New->Import` and you can paste the JSON of the [dashboard](./grafana/dashboard.json) and create it.
 
 ### Read Replica support
 
